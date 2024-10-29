@@ -24,7 +24,7 @@ st.pydeck_chart(
         layers=[
             pdk.Layer(
                 "ScatterplotLayer",
-                data=df,
+                data=df[['longitude', 'latitude']],
                 get_position=["longitude", "latitude"],
                 auto_highlight=True,    
                 get_color=[200,20,20],
@@ -32,7 +32,7 @@ st.pydeck_chart(
             ),
             pdk.Layer(
                 "TextLayer",
-                data=df,
+                data=df[['longitude','latitude','valorMedida']],
                 get_position=["longitude", "latitude"],
                 get_text="valorMedida",
                 get_size=10000,
