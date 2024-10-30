@@ -3,42 +3,52 @@ import streamlit as st
 import datetime as dt
 import pydeck as pdk
 import numpy as np
+from pydeck.types import String
+
+st.title('Histórico de chuva em São Paulo')
 
 df = pd.read_csv('inmet_filter.csv')
-df['datahora'] = pd.to_datetime(df['datahora'])
+df['data'] = pd.to_datetime(df['datahora']).dt.date
 
+primeiro = df['data'].min()
+ultimo = df['data'].max()
 
-primerio = df['datahora'].min().to_pydatetime()
-ultimo = df['datahora'].max().to_pydatetime()
+dtselect = st.date_input("Escolha o período: ", value=(primeiro,ultimo), min_value=primeiro, max_value=ultimo)
 
-st.write()
+dfTable = df[(df['data']>=dtselect[0]) & (df['data']<=dtselect[1])].drop(['codEstacao', 'datahora'], axis=1).groupby(['nomeEstacao', 'latitude', 'longitude', 'data']).sum().reset_index()
+dfMean = df[(df['data']>=dtselect[0]) & (df['data']<=dtselect[1])].drop(['codEstacao', 'datahora', 'data'], axis=1).groupby(['nomeEstacao', 'latitude', 'longitude']).mean().reset_index()
+
+dfMean['valorMedida'] = (dfMean['nomeEstacao'] + "\n" + dfMean['valorMedida'].round(2).astype(str))
+
 
 st.pydeck_chart(
-    pdk.Deck(        
+    pdk.Deck(
         map_style=None,
         initial_view_state=pdk.ViewState(
-            latitude=-22.06981255406641,
-            longitude=-48.433487601512546,
-            zoom=6
+            latitude=-22.5,
+            longitude=-48.50,
+            zoom=5.5,
+            #pitch=50,
         ),
         layers=[
             pdk.Layer(
-                "ScatterplotLayer",
-                data=df[['longitude', 'latitude']],
-                get_position=["longitude", "latitude"],
-                auto_highlight=True,    
-                get_color=[200,20,20],
-                radius_scale=6000
-            ),
-            pdk.Layer(
                 "TextLayer",
-                data=df[['longitude','latitude','valorMedida']],
-                get_position=["longitude", "latitude"],
-                get_text="valorMedida",
-                get_size=10000,
+                data=dfMean[['latitude', 'longitude', 'nomeEstacao', 'valorMedida']],
+                get_position=['longitude','latitude'],
+                get_text='valorMedida',
+                get_size=13,
                 get_color=[0,0,0],
+                background=True,
+                get_background_color=[21, 124, 179],
+                background_padding=[5,5,5,5],
+                tooltip='nomeEstacao'
             )
         ],
-        tooltip={"text": "Elevation:"}
+        
     )
 )
+
+st.dataframe(dfTable.rename(columns={'valorMedida':'Precipitação (mm)', 'nomeEstacao':'Nome Estação', 'latitude':'Latitude', 'longitude':'Longitude','data':'Data'}), use_container_width=True)
+
+#ref
+# referencia das opções de texto do TextLayer https://rdrr.io/github/anthonynorth/rdeck/man/text_layer.html
