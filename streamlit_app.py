@@ -5,20 +5,26 @@ import pydeck as pdk
 import numpy as np
 from pydeck.types import String
 
-st.title('Histórico de chuva em São Paulo')
 
 df = pd.read_csv('inmet_filter.csv')
 df['data'] = pd.to_datetime(df['datahora']).dt.date
-
 primeiro = df['data'].min()
 ultimo = df['data'].max()
 
+def TabelaEst (dtselect):
+    return df[(df['data']>=dtselect[0]) & (df['data']<=dtselect[1])].drop(['codEstacao', 'datahora'], axis=1).groupby(['nomeEstacao', 'latitude', 'longitude', 'data']).sum().reset_index()
+
+def TabMedias (dtselect):
+    dfMean = df[(df['data']>=dtselect[0]) & (df['data']<=dtselect[1])].drop(['codEstacao', 'datahora', 'data'], axis=1).groupby(['nomeEstacao', 'latitude', 'longitude']).mean().reset_index()
+    dfMean['valorMedida'] = (dfMean['nomeEstacao'] + "\n" + dfMean['valorMedida'].round(2).astype(str))
+    return dfMean
+
+
+st.title('Histórico de chuva em São Paulo')
+
+
+
 dtselect = st.date_input("Escolha o período: ", value=(primeiro,ultimo), min_value=primeiro, max_value=ultimo)
-
-dfTable = df[(df['data']>=dtselect[0]) & (df['data']<=dtselect[1])].drop(['codEstacao', 'datahora'], axis=1).groupby(['nomeEstacao', 'latitude', 'longitude', 'data']).sum().reset_index()
-dfMean = df[(df['data']>=dtselect[0]) & (df['data']<=dtselect[1])].drop(['codEstacao', 'datahora', 'data'], axis=1).groupby(['nomeEstacao', 'latitude', 'longitude']).mean().reset_index()
-
-dfMean['valorMedida'] = (dfMean['nomeEstacao'] + "\n" + dfMean['valorMedida'].round(2).astype(str))
 
 
 st.pydeck_chart(
@@ -33,7 +39,7 @@ st.pydeck_chart(
         layers=[
             pdk.Layer(
                 "TextLayer",
-                data=dfMean[['latitude', 'longitude', 'nomeEstacao', 'valorMedida']],
+                data=TabMedias(dtselect)[['latitude', 'longitude', 'nomeEstacao', 'valorMedida']],
                 get_position=['longitude','latitude'],
                 get_text='valorMedida',
                 get_size=13,
@@ -48,7 +54,7 @@ st.pydeck_chart(
     )
 )
 
-st.dataframe(dfTable.rename(columns={'valorMedida':'Precipitação (mm)', 'nomeEstacao':'Nome Estação', 'latitude':'Latitude', 'longitude':'Longitude','data':'Data'}), use_container_width=True)
+st.dataframe(TabelaEst.rename(columns={'valorMedida':'Precipitação (mm)', 'nomeEstacao':'Nome Estação', 'latitude':'Latitude', 'longitude':'Longitude','data':'Data'}), use_container_width=True)
 
 #ref
 # referencia das opções de texto do TextLayer https://rdrr.io/github/anthonynorth/rdeck/man/text_layer.html
