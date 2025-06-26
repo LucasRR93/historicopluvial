@@ -28,22 +28,14 @@ def df_Pontos(dtselect):
     tabela2 = tabela2.groupby(['nomeEstacao', 'latitude', 'longitude']).sum().reset_index()
     return tabela2
 
+
+
 with right_column:
     dtselect = st.date_input("Escolha o período: ", value=(primeiro,ultimo), min_value=primeiro, max_value=ultimo)
     st.dataframe(df_Tabela(dtselect))
 
-RaioAcao = pdk.Layer(
-                "ScatterplotLayer",
-                data=df_Pontos(dtselect),
-                pickable=True,
-                stroked=False,
-                filled=True,
-                radius_scale=1,
-                line_width_min_pixels=1,
-                get_position=['longitude','latitude'],
-                get_radius=1000,
-                get_fill_color=[25, 150, 217, 175],
-            )
+
+
 Ponto = pdk.Layer(
                 "ScatterplotLayer",
                 data=df_Pontos(dtselect),
@@ -53,10 +45,10 @@ Ponto = pdk.Layer(
                 filled=True,
                 radius_scale=1,
                 radius_min_pixels=5,
-                radius_max_pixels=10,
+                radius_max_pixels=20,
                 line_width_min_pixels=1,
                 get_position=['longitude','latitude'],
-                get_radius=10,
+                get_radius=20,
                 get_fill_color=[255, 75, 75],
             )
 
@@ -70,8 +62,8 @@ with left_column:
                 zoom=5.5,
                 #pitch=50,
             ),
-            layers=[RaioAcao,Ponto],
-            tooltip={"html": "<b>Estação:</b> {nomeEstacao} <br/> <b>Precipitação:</b> {valorMedida}","style": {"backgroundColor": "steelblue", "color": "white"}}            
+            layers=[Ponto],
+            tooltip={"html": "<b>Estação:</b> {nomeEstacao} <br/> <b>Precipitação:</b> {valorMedida}","style": {"backgroundColor": "steelblue", "color": "white"}}       
         )
     )
 
